@@ -1,0 +1,165 @@
+//Libraries
+#include <DHT.h>;
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(2,3,4,5,6,7);
+
+//Constants
+#define RELAY_FAN_PIN  11 // Arduino pwm connected to relay which connected to cooling element
+#define RELAY_HEATER_PIN A6 // Arduino connected to relay which connected to heating element
+#define button1 A2 // to reduce the temp
+#define button2 A4// to increase the temp
+#define DHTPIN 8    // temp sensor
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
+
+//Variables
+float temp; //Stores temperature value
+float temp1, temp2; 
+int temp_lower_threshold = 16; // in celcius
+int temp_upper_threshold = 25;
+int fanSpeed = 100;
+//int heaterTemp;
+int button1State = 0; // var for reading button 1
+int button2State = 0; // var for reading button 2
+
+void setup()
+{
+  pinMode(RELAY_FAN_PIN, OUTPUT);
+  pinMode(RELAY_HEATER_PIN, OUTPUT);
+  pinMode(DHTPIN, INPUT);
+  pinMode(button1, INPUT);
+  pinMode(button2, INPUT);
+  lcd.begin(16,2);
+  Serial.begin(9600);
+  dht.begin();
+}
+
+void loop()
+{
+    delay(5000);  
+    //Read data and store it to variable temp
+    temp= dht.readTemperature();
+    Serial.print("Current Temp is: ");
+    Serial.print(temp);
+    Serial.print("*C");
+    lcd.print("Current Temp is: ");
+    lcd.print(temp);
+    lcd.print("*C");
+
+    button1State = digitalRead(button1);
+    button2State = digitalRead(button2);
+
+  if(button1State == HIGH && 16<=temp<=20) //to reduce the temp = turn on fan, increase speed
+   {
+     temp -= 1;
+
+     Serial.print("Adjusted Temp is : ");
+     Serial.print(temp);
+     Serial.print("*C");
+     Serial.println("Cooling Mode");
+     lcd.print("Adjusted Temp is : ");
+     lcd.print(temp);
+     lcd.print("*C");
+     lcd.setCursor(0,1); // move cursor to next line
+     lcd.print("Increasing Fan Speed");
+     fanSpeed = 3*fanSpeed;
+     analogWrite(RELAY_FAN_PIN, fanSpeed); // fan
+     //digitalWrite(RELAY_FAN_PIN, HIGH);
+     digitalWrite(RELAY_HEATER_PIN, LOW);
+
+    
+    if(temp > temp_upper_threshold)
+    {
+      Serial.println("Cooling Mode");
+      lcd.print("Cooling Mode");
+      lcd.setCursor(0,1);
+      //fanSpeed = 3*fanSpeed;
+      //analogWrite(RELAY_FAN_PIN, fanSpeed);
+      digitalWrite(RELAY_FAN_PIN, HIGH); // turn on fan
+      digitalWrite(RELAY_HEATER_PIN, LOW); // turn off heater
+      temp1 = dht.readTemperature();
+      Serial.print("Current Temp is : ");
+      Serial.print(temp1);
+      Serial.print("*C");
+      lcd.print("Current Temp is : ");
+      lcd.print(temp1);
+      lcd.print("*C");
+
+    } 
+    else if(temp < temp_lower_threshold)
+    {
+      Serial.println("Heating Mode");
+      lcd.print("Heating Mode");
+      lcd.setCursor(0,1);
+      //fanSpeed = 0;
+      //analogWrite(RELAY_FAN_PIN, fanSpeed);
+      digitalWrite(RELAY_FAN_PIN, LOW); // turn off fan
+      digitalWrite(RELAY_HEATER_PIN, HIGH); // turn on heater
+      temp2 = dht.readTemperature();
+      Serial.print("Current Temp is : ");
+      Serial.print(temp2);
+      Serial.print("*C");
+      lcd.print("Current Temp is : ");
+      lcd.print(temp2);
+      lcd.print("*C");
+
+    }
+  }
+
+   else if(button2State == HIGH && 20<temp<=25) //to increase temp = turn on heater
+   {
+     temp += 1;
+     Serial.print("Adjusted Temp is : ");
+     Serial.print(temp);
+     Serial.print("*C");
+     Serial.println("Heating Mode");
+     lcd.print("Adjusted Temp is : ");
+     lcd.print(temp);
+     lcd.print("*C");
+     lcd.setCursor(0,1); // move cursor to next line
+     lcd.print("Decreasing Fan Speed");
+     fanSpeed = 1.5*fanSpeed;
+     analogWrite(RELAY_FAN_PIN, fanSpeed); // fan
+     //digitalWrite(RELAY_FAN_PIN, HIGH);
+     //digitalWrite(RELAY_HEATER_PIN, HIGH); //heater
+
+    if(temp > temp_upper_threshold)
+    {
+      Serial.println("Cooling Mode");
+      //fanSpeed = 3*fanSpeed;
+      //analogWrite(RELAY_FAN_PIN, fanSpeed);
+      digitalWrite(RELAY_FAN_PIN, HIGH); // turn on fan
+      digitalWrite(RELAY_HEATER_PIN, LOW); // turn off heater
+      temp1 = dht.readTemperature();
+      Serial.print("Current Temp is : ");
+      Serial.print(temp1);
+      Serial.print("*C");
+      lcd.print("Current Temp is : ");
+      lcd.print(temp1);
+      lcd.print("*C");
+
+    } 
+    else if(temp < temp_lower_threshold)
+    {
+      Serial.println("Heating Mode");
+     //fanSpeed = 0;
+      //analogWrite(RELAY_FAN_PIN, fanSpeed);
+      digitalWrite(RELAY_FAN_PIN, LOW); // turn off fan
+      digitalWrite(RELAY_HEATER_PIN, HIGH); // turn on heater
+      temp2 = dht.readTemperature();
+      Serial.print("Current Temp is : ");
+      Serial.print(temp2);
+      Serial.print("*C");
+      
+      lcd.print("Current Temp is : ");
+      lcd.print(temp2);
+      lcd.print("*C");
+
+    }
+  }
+    lcd.clear();
+    delay(10000); 
+}
+
+ 
